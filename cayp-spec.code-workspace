@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "CAYP Specification v1.0"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": false
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "redhat.vscode-yaml",
+      "davidanson.vscode-markdownlint",
+      "yzhang.markdown-all-in-one"
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  // Editor settings
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [80, 120],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // Markdown settings
+  "markdown.preview.breaks": true,
+  "markdown.preview.fontSize": 14,
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+
+  // JSON settings
+  "json.schemas": [
+    {
+      "fileMatch": ["cayp-schema-v1.0.json"],
+      "url": "./cayp-schema-v1.0.json"
+    }
+  ],
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // YAML settings
+  "[yaml]": {
+    "editor.autoIndent": "advanced"
+  },
+
+  // File associations for .cayp files
+  "files.associations": {
+    "*.cayp": "yaml"
+  },
+
+  // Search settings
+  "search.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/dist": true
+  },
+
+  // Git settings
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true
+}
