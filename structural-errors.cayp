@@ -1,0 +1,190 @@
+# INVALID: Structural and Semantic Violations
+# This configuration demonstrates structural and agentic semantic errors
+
+# ❌ ERROR: Missing Required cayp_version Field
+# Every CAYP file MUST start with cayp_version
+# cayp_version: "1.0"  # REQUIRED
+
+name: "broken-agent"
+description: "Agent with structural problems"
+# ❌ ERROR: Missing required 'created' field
+# created: "2025-11-08"  # REQUIRED
+
+# ❌ ERROR: Invalid Model Reference
+models:
+  primary:
+    provider: "unknown_provider"    # WRONG: Provider not in known list
+    model: "fake-model-9000"        # WRONG: Model doesn't exist
+    parameters:
+      max_tokens: 4096
+    fallback: "nonexistent_model"   # WRONG: References undefined model
+    
+  secondary:
+    # ❌ ERROR: Missing required 'provider' field
+    model: "gpt-4"
+    parameters:
+      max_tokens: 4096
+
+# ❌ ERROR: Malformed Tool Definitions
+tools:
+  - name: "search"      # ❌ Duplicate name (defined below too)
+    type: "invalid_type"           # WRONG: Type must be function/api/system
+    # ❌ ERROR: Missing required 'description' field
+    parameters:
+      query:
+        type: "unknown_type"       # WRONG: Invalid parameter type
+        
+  - name: "search"      # ❌ ERROR: Duplicate tool name
+    type: "api"
+    description: "Search tool"
+    parameters:
+      query:
+        type: "string"
+        # ❌ No required field specified
+        
+  - # ❌ ERROR: Missing required 'name' field
+    type: "function"
+    description: "Unnamed tool"
+
+# ❌ ERROR: Broken Workflow
+workflows:
+  broken_flow:
+    # ❌ ERROR: Missing required 'description' field
+    steps:
+      - name: "step1"
+        tool: "undefined_tool"     # WRONG: Tool not defined
+        input:
+          query: "${undefined_var}" # WRONG: Variable never defined
+        output: "result1"
+        
+      - name: "step2"
+        model: "undefined_model"   # WRONG: Model not defined
+        input: "${result1}"
+        output: "result2"
+        
+      - name: "step3"
+        # ❌ ERROR: Neither 'tool' nor 'model' specified
+        input: "${result2}"
+        output: "result3"
+        
+      - name: "step1"              # ❌ ERROR: Duplicate step name
+        tool: "search"
+        input:
+          query: "${result3}"      # ❌ ERROR: Circular dependency detected
+        output: "result1"
+
+# ❌ ERROR: Circular Workflow Dependencies
+workflows:
+  circular:
+    description: "Workflow with circular dependency"
+    steps:
+      - name: "a"
+        tool: "search"
+        input: "${c_output}"       # Depends on c
+        output: "a_output"
+        
+      - name: "b"
+        tool: "search"
+        input: "${a_output}"       # Depends on a
+        output: "b_output"
+        
+      - name: "c"
+        tool: "search"
+        input: "${b_output}"       # Depends on b → circular!
+        output: "c_output"
+
+# ❌ ERROR: Invalid Safety Configuration
+safety:
+  # ❌ ERROR: content_filtering enabled but no categories specified
+  content_filtering:
+    enabled: true
+    action: "invalid_action"       # WRONG: Must be block/warn/log
+    
+  output_validation:
+    max_length: -1000              # WRONG: Negative value
+    forbidden_patterns:
+      - regex: "[unclosed"         # WRONG: Invalid regex
+        reason: "Bad pattern"
+        
+  rate_limiting:
+    requests_per_user_per_hour: "unlimited"  # WRONG: Must be integer
+    burst_limit: 0                 # WRONG: Must be positive
+    
+  audit:
+    log_level: "verbose"           # WRONG: Must be debug/info/warn/error
+    log_inputs: "yes"              # WRONG: Must be true/false
+    retention_days: 0              # WRONG: Must be positive
+
+# ❌ ERROR: Invalid Cross-References
+workflows:
+  invalid_refs:
+    description: "Workflow with invalid references"
+    steps:
+      - name: "fetch"
+        tool: "web_search"         # References undefined tool
+        input:
+          query: "${user.input}"   # Invalid variable path
+        output: "data"
+        
+      - name: "process"
+        model: "primary"           # Model exists but...
+        input:
+          data: "${nonexistent}"   # References nonexistent output
+        output: "result"
+
+# ❌ ERROR: Type Mismatches
+workflows:
+  type_errors:
+    description: "Workflow with type mismatches"
+    input_schema:
+      count:
+        type: "integer"
+        required: true
+        
+    steps:
+      - name: "generate"
+        model: "primary"
+        input:
+          count: "${count}"        # Type should be validated
+        output: "items"
+        
+      - name: "filter"
+        tool: "search"
+        input:
+          # ❌ ERROR: Passing array where string expected
+          query: "${items}"        # items is array, query needs string
+        output: "filtered"
+
+# VALIDATION ERRORS THIS FILE PRODUCES:
+# Line 3: Missing required field 'cayp_version'
+# Line 9: Missing required field 'created'
+# Line 13: Unknown provider 'unknown_provider'
+# Line 14: Model 'fake-model-9000' not valid for provider
+# Line 16: Fallback model 'nonexistent_model' not defined
+# Line 20: Missing required field 'provider'
+# Line 26: Duplicate tool name 'search'
+# Line 27: Invalid tool type 'invalid_type'
+# Line 28: Missing required field 'description'
+# Line 31: Invalid parameter type 'unknown_type'
+# Line 35: Duplicate tool name 'search'
+# Line 42: Missing required field 'name'
+# Line 48: Missing required field 'description'
+# Line 50: Tool 'undefined_tool' not defined
+# Line 52: Variable 'undefined_var' not defined
+# Line 56: Model 'undefined_model' not defined
+# Line 61: Neither 'tool' nor 'model' specified
+# Line 65: Duplicate step name 'step1'
+# Line 68: Circular dependency detected: result3 → result1
+# Line 76: Circular workflow dependency: a → b → c → a
+# Line 92: content_filtering enabled but no categories specified
+# Line 93: Invalid action 'invalid_action'
+# Line 96: Negative max_length not allowed
+# Line 98: Invalid regex pattern '[unclosed'
+# Line 102: rate_limiting value must be integer
+# Line 103: burst_limit must be positive
+# Line 106: Invalid log_level 'verbose'
+# Line 107: log_inputs must be boolean
+# Line 108: retention_days must be positive
+# Line 117: Tool 'web_search' not defined
+# Line 124: Variable 'nonexistent' not defined
+# Line 141: Type mismatch: array provided where string expected

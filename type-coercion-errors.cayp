@@ -1,0 +1,94 @@
+# INVALID: Type Coercion Problems
+# This configuration demonstrates YAML ambiguities that CAYP prevents
+
+cayp_version: "1.0"
+name: "broken-config"
+description: "Configuration with type coercion issues"
+created: "2025-11-08"
+
+models:
+  primary:
+    provider: "anthropic"
+    model: "claude-sonnet-4"
+    parameters:
+      max_tokens: 4096
+      
+# ❌ ERROR: The Norway Problem
+# Unquoted "no" will parse as boolean false
+deployment:
+  country: no              # WRONG: Parses as false
+  region: us-east-1
+  
+# ✅ CORRECT: Quote ambiguous strings
+# country: "no"           # RIGHT: Parses as string "no"
+
+# ❌ ERROR: Yes/No/On/Off Boolean Ambiguity
+settings:
+  debug: yes              # WRONG: Legacy boolean
+  logging: on             # WRONG: Legacy boolean
+  caching: off            # WRONG: Legacy boolean
+  
+# ✅ CORRECT: Use true/false only
+# debug: true            # RIGHT: Standard boolean
+# logging: true          # RIGHT: Standard boolean
+# caching: false         # RIGHT: Standard boolean
+
+# ❌ ERROR: Sexagesimal Number Problem
+# Version numbers can be parsed as base-60
+versions:
+  app: 1.20               # WRONG: Could parse as 80 (1*60 + 20)
+  api: 2.30               # WRONG: Could parse as 150 (2*60 + 30)
+  
+# ✅ CORRECT: Quote version numbers
+# app: "1.20"            # RIGHT: Parses as string "1.20"
+# api: "2.30"            # RIGHT: Parses as string "2.30"
+
+# ❌ ERROR: Implicit Type Coercion
+parameters:
+  timeout: 30             # Could be int or string depending on context
+  retry: true             # Could be bool or int 1
+  status: 1               # Could be int or bool true
+  
+# ✅ CORRECT: Explicit typing
+# timeout: 30            # Clearly an integer
+# retry: true            # Clearly a boolean
+# status: 1              # Clearly an integer (not boolean)
+
+# ❌ ERROR: Numeric-Looking Strings
+identifiers:
+  user_id: 123456         # WRONG: Parses as integer, breaks string operations
+  order_id: 0001234       # WRONG: Leading zeros problematic
+  zip_code: 02134         # WRONG: Parses as octal or loses leading zero
+  
+# ✅ CORRECT: Quote numeric strings
+# user_id: "123456"      # RIGHT: Preserved as string
+# order_id: "0001234"    # RIGHT: Leading zeros preserved
+# zip_code: "02134"      # RIGHT: Leading zero preserved
+
+# ❌ ERROR: Implicit Null
+optional:
+  field1:                 # WRONG: Implicit null
+  field2:                 # WRONG: Implicit null
+  
+# ✅ CORRECT: Explicit null
+# field1: null           # RIGHT: Explicit null
+# field2: ~              # RIGHT: Explicit null (YAML syntax)
+
+# VALIDATION ERRORS THIS FILE PRODUCES:
+# Line 16: Unquoted ambiguous value 'no' - must quote: "no"
+# Line 24: Legacy boolean 'yes' not allowed - use true/false
+# Line 25: Legacy boolean 'on' not allowed - use true/false
+# Line 26: Legacy boolean 'off' not allowed - use true/false
+# Line 35: Unquoted version number - must quote: "1.20"
+# Line 36: Unquoted version number - must quote: "2.30"
+# Line 57: Numeric-like string must be quoted: "123456"
+# Line 58: Numeric-like string must be quoted: "0001234"
+# Line 59: Numeric-like string must be quoted: "02134"
+# Line 65-66: Implicit null not allowed - use explicit null
+
+safety:
+  content_filtering:
+    enabled: true
+    action: "block"
+  audit:
+    log_level: "info"

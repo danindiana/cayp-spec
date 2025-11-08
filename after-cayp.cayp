@@ -1,0 +1,178 @@
+# AFTER: CAYP Configuration
+# Same configuration, but safe, deterministic, and production-ready
+
+cayp_version: "1.0"
+name: "agent-config"
+description: "Migrated agent configuration with CAYP safety"
+created: "2025-11-08"
+
+# Metadata (explicit versioning)
+metadata:
+  version: "1.20"                # ✅ Quoted to prevent sexagesimal parsing
+  enabled: true                  # ✅ Explicit boolean (not "yes")
+  debug: true                    # ✅ Explicit boolean (not "on")
+  caching: false                 # ✅ Explicit boolean (not "off")
+
+# Deployment (Norway Problem SOLVED)
+deployment:
+  country: "no"                  # ✅ Quoted - parses correctly as string
+  region: "us-west-2"
+  environment: "prod"
+  
+  # Explicit common settings (no anchors/aliases)
+  timeout: 30
+  retry: 3
+  default_region: "us-east-1"
+
+# Model Configuration (explicit and validated)
+models:
+  primary:
+    provider: "anthropic"
+    model: "claude-sonnet-4"
+    parameters:
+      max_tokens: 4096
+      temperature: 0.7
+      timeout: 30                # ✅ Explicit duplication (safe)
+      retry: 3
+      region: "us-east-1"
+      
+  secondary:
+    provider: "openai"
+    model: "gpt-4"
+    parameters:
+      max_tokens: 4096
+      timeout: 30                # ✅ Explicit duplication (safe)
+      retry: 3
+      region: "us-east-1"
+
+# Authentication (secrets via environment variables)
+authentication:
+  api_key_env: "ANTHROPIC_API_KEY"     # ✅ Environment variable reference
+  token_env: "AUTH_TOKEN"              # ✅ No hardcoded secrets
+  
+# Configuration (explicit types)
+config:
+  user_id: "123456"              # ✅ Quoted - clearly a string
+  zip_code: "02134"              # ✅ Leading zero preserved
+  order_id: "0001234"            # ✅ Leading zeros preserved
+  status: 1                      # ✅ Clearly an integer (not boolean)
+  
+# Optional fields (explicit nulls)
+optional:
+  field1: null                   # ✅ Explicitly null
+  field2: null                   # ✅ Explicitly null
+  field3: null                   # ✅ Explicitly null
+
+# Tools (structured with full validation)
+tools:
+  - name: "search"
+    type: "api"
+    description: "Search for information"
+    parameters:
+      query:
+        type: "string"
+        required: true
+      max_results:
+        type: "integer"
+        default: 10
+        minimum: 1
+        maximum: 100
+    authentication:
+      type: "api_key"
+      key_env: "SEARCH_API_KEY"
+    rate_limit:
+      requests_per_minute: 60
+      
+  - name: "fetch"
+    type: "api"
+    description: "Fetch content from URL"
+    parameters:
+      url:
+        type: "string"
+        required: true
+        pattern: "^https?://"
+    rate_limit:
+      requests_per_minute: 30
+
+# Workflows (explicit structure with validation)
+workflows:
+  main:
+    description: "Main research workflow"
+    input_schema:
+      query:
+        type: "string"
+        required: true
+        
+    steps:
+      - name: "search"
+        tool: "search"
+        input:
+          query: "${query}"
+          max_results: 10
+        output: "search_results"
+        
+      - name: "analyze"
+        model: "primary"
+        input:
+          results: "${search_results}"
+          task: "Analyze search results"
+        output: "analysis"
+        
+    output: "${analysis}"
+    
+    error_handling:
+      on_failure: "retry"
+      max_retries: 2
+      retry_delay: 5
+      
+    timeout: 120
+
+# Safety Configuration (comprehensive and required)
+safety:
+  content_filtering:
+    enabled: true                # ✅ Explicit boolean (not "on")
+    categories:
+      - "hate_speech"
+      - "violence"
+      - "self_harm"
+      - "sexual_content"
+    action: "block"
+    
+  output_validation:
+    max_length: 50000
+    forbidden_patterns:
+      - regex: "(?i)api[_-]?key"
+        reason: "Prevent API key leakage"
+    required_disclaimer: true
+    
+  rate_limiting:
+    requests_per_user_per_hour: 100
+    burst_limit: 10
+    
+  audit:
+    log_level: "info"            # ✅ Explicit string (not "yes")
+    log_inputs: true             # ✅ Explicit boolean
+    log_outputs: true            # ✅ Explicit boolean
+    retention_days: 90
+
+# Additional CAYP Benefits:
+# ✅ Schema validation ensures correctness
+# ✅ No security vulnerabilities (no anchors/aliases/tags)
+# ✅ Deterministic parsing (no type coercion)
+# ✅ Agentic semantics (models, tools, workflows)
+# ✅ Production-ready safety configuration
+# ✅ Clear error messages with line numbers
+# ✅ Migration tooling available
+# ✅ IDE support and auto-completion
+
+# Migration Summary:
+# - Fixed sexagesimal parsing: version quoted
+# - Fixed Norway problem: country quoted
+# - Replaced legacy booleans with true/false
+# - Removed anchors/aliases (security risk)
+# - Moved secrets to environment variables
+# - Fixed numeric string type issues
+# - Made nulls explicit
+# - Added comprehensive structure and validation
+# - Added required safety configuration
+# - Added full agentic semantics support

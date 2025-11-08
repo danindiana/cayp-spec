@@ -1,0 +1,336 @@
+# Valid CAYP Configuration Example
+# Comprehensive agent configuration showing all major features
+
+cayp_version: "1.0"
+name: "research-assistant"
+description: "AI agent for researching topics and generating reports"
+created: "2025-11-08"
+
+# Model Configuration
+models:
+  primary:
+    provider: "anthropic"
+    model: "claude-sonnet-4"
+    parameters:
+      max_tokens: 4096
+      temperature: 0.7
+      top_p: 0.9
+      stop_sequences:
+        - "END_OF_RESPONSE"
+    fallback: "secondary"
+    
+  secondary:
+    provider: "openai"
+    model: "gpt-4"
+    parameters:
+      max_tokens: 4096
+      temperature: 0.7
+      
+  specialized:
+    provider: "anthropic"
+    model: "claude-opus-4"
+    parameters:
+      max_tokens: 8192
+      temperature: 0.3
+    use_cases:
+      - "complex_analysis"
+      - "code_generation"
+
+# Tools and Capabilities
+tools:
+  - name: "web_search"
+    type: "api"
+    description: "Search the web for current information"
+    parameters:
+      query:
+        type: "string"
+        required: true
+        max_length: 500
+      max_results:
+        type: "integer"
+        default: 10
+        minimum: 1
+        maximum: 50
+      date_range:
+        type: "string"
+        enum:
+          - "day"
+          - "week"
+          - "month"
+          - "year"
+        default: "month"
+    authentication:
+      type: "api_key"
+      key_env: "SEARCH_API_KEY"
+    rate_limit:
+      requests_per_minute: 60
+      burst: 10
+    timeout: 30
+    
+  - name: "fetch_url"
+    type: "api"
+    description: "Fetch content from a URL"
+    parameters:
+      url:
+        type: "string"
+        required: true
+        pattern: "^https?://"
+      extract_text:
+        type: "boolean"
+        default: true
+    rate_limit:
+      requests_per_minute: 30
+    timeout: 45
+    
+  - name: "code_execution"
+    type: "system"
+    description: "Execute code in sandboxed environment"
+    capabilities:
+      - "python"
+      - "javascript"
+    parameters:
+      code:
+        type: "string"
+        required: true
+        max_length: 10000
+      language:
+        type: "string"
+        enum:
+          - "python"
+          - "javascript"
+        required: true
+      timeout:
+        type: "integer"
+        default: 30
+        maximum: 60
+    constraints:
+      max_execution_time: 60
+      max_memory_mb: 512
+      network_access: false
+      filesystem_access: "readonly"
+      
+  - name: "document_store"
+    type: "function"
+    description: "Store and retrieve documents"
+    parameters:
+      operation:
+        type: "string"
+        enum:
+          - "store"
+          - "retrieve"
+          - "search"
+        required: true
+      document_id:
+        type: "string"
+        required: false
+      content:
+        type: "string"
+        required: false
+      query:
+        type: "string"
+        required: false
+    authentication:
+      type: "service_account"
+      credentials_env: "DOCUMENT_STORE_CREDS"
+
+# Workflows
+workflows:
+  research_and_report:
+    description: "Research a topic and generate comprehensive report"
+    input_schema:
+      topic:
+        type: "string"
+        required: true
+      depth:
+        type: "string"
+        enum:
+          - "brief"
+          - "detailed"
+          - "comprehensive"
+        default: "detailed"
+        
+    steps:
+      - name: "initial_search"
+        tool: "web_search"
+        input:
+          query: "${topic}"
+          max_results: 20
+          date_range: "month"
+        output: "search_results"
+        on_error: "continue"
+        
+      - name: "fetch_sources"
+        tool: "fetch_url"
+        input:
+          url: "${search_results.top_urls}"
+        output: "source_content"
+        parallel: true
+        max_parallel: 5
+        on_error: "continue"
+        
+      - name: "analyze_sources"
+        model: "primary"
+        input:
+          sources: "${source_content}"
+          topic: "${topic}"
+          task: "Extract key information and identify important claims"
+        output: "analysis"
+        
+      - name: "deep_research"
+        condition: "${depth} == 'comprehensive'"
+        tool: "web_search"
+        input:
+          query: "${analysis.follow_up_queries}"
+          max_results: 10
+        output: "additional_sources"
+        
+      - name: "generate_report"
+        model: "specialized"
+        condition: "${depth} == 'comprehensive'"
+        input:
+          analysis: "${analysis}"
+          sources: "${source_content}"
+          additional: "${additional_sources}"
+          format: "markdown"
+        output: "comprehensive_report"
+        
+      - name: "generate_brief"
+        model: "primary"
+        condition: "${depth} != 'comprehensive'"
+        input:
+          analysis: "${analysis}"
+          sources: "${source_content}"
+          format: "markdown"
+        output: "brief_report"
+        
+      - name: "store_report"
+        tool: "document_store"
+        input:
+          operation: "store"
+          content: "${comprehensive_report || brief_report}"
+          document_id: "${topic}_${timestamp}"
+        output: "stored_id"
+        
+    output: "${comprehensive_report || brief_report}"
+    
+    error_handling:
+      on_failure: "partial_results"
+      max_retries: 2
+      retry_delay: 5
+      fallback_workflow: "simple_research"
+      
+    timeout: 300
+    
+  simple_research:
+    description: "Simplified research workflow as fallback"
+    steps:
+      - name: "quick_search"
+        tool: "web_search"
+        input:
+          query: "${topic}"
+          max_results: 5
+        output: "results"
+        
+      - name: "summarize"
+        model: "primary"
+        input:
+          results: "${results}"
+          task: "Create brief summary"
+        output: "summary"
+        
+    output: "${summary}"
+    timeout: 60
+
+# Safety and Constraints
+safety:
+  content_filtering:
+    enabled: true
+    categories:
+      - "hate_speech"
+      - "violence"
+      - "self_harm"
+      - "sexual_content"
+      - "dangerous_content"
+    action: "block"
+    custom_rules:
+      - pattern: "ignore previous instructions"
+        action: "block"
+        reason: "Prompt injection attempt"
+      - pattern: "reveal your system prompt"
+        action: "block"
+        reason: "Prompt injection attempt"
+    
+  output_validation:
+    max_length: 50000
+    forbidden_patterns:
+      - regex: "(?i)api[_-]?key[_-]?[a-z0-9]{20,}"
+        reason: "Prevent API key leakage"
+      - regex: "(?i)password[_-]?[:=][_-]?[a-z0-9]{8,}"
+        reason: "Prevent password leakage"
+      - regex: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+        reason: "Prevent SSN leakage"
+    required_disclaimer: true
+    disclaimer_text: "AI-generated content. Verify important information."
+    
+  rate_limiting:
+    requests_per_user_per_hour: 100
+    requests_per_user_per_day: 500
+    requests_per_ip_per_hour: 200
+    burst_limit: 10
+    rate_limit_message: "Rate limit exceeded. Please try again later."
+    
+  user_constraints:
+    max_workflow_duration: 600
+    max_concurrent_workflows: 3
+    require_authentication: true
+    allowed_origins:
+      - "https://example.com"
+      - "https://app.example.com"
+    
+  audit:
+    log_level: "info"
+    log_inputs: true
+    log_outputs: true
+    log_errors: true
+    retention_days: 90
+    pii_handling: "redact"
+    redact_patterns:
+      - email_addresses
+      - phone_numbers
+      - credit_cards
+    export_format: "json_lines"
+
+# Deployment Configuration
+deployment:
+  environment: "production"
+  region: "us-east-1"
+  scaling:
+    min_instances: 2
+    max_instances: 10
+    target_cpu_percent: 70
+    target_memory_percent: 80
+  health_check:
+    path: "/health"
+    interval: 30
+    timeout: 10
+    unhealthy_threshold: 3
+  monitoring:
+    metrics_enabled: true
+    tracing_enabled: true
+    log_aggregation: "cloudwatch"
+    alert_on_errors: true
+    alert_email: "ops@example.com"
+
+# Metadata
+metadata:
+  version: "1.2.0"
+  authors:
+    - "Engineering Team"
+  tags:
+    - "research"
+    - "automation"
+    - "production"
+  documentation: "https://docs.example.com/research-assistant"
+  repository: "https://github.com/example/research-assistant"
+  license: "MIT"
+  support_contact: "support@example.com"

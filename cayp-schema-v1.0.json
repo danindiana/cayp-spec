@@ -1,0 +1,734 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cayp-spec.org/schemas/v1.0/cayp-schema.json",
+  "title": "CAYP Configuration Schema",
+  "description": "JSON Schema for validating CAYP (Configuration for Agentic Systems - YAML Profile) files",
+  "type": "object",
+  "required": ["cayp_version", "name", "description", "created", "safety"],
+  "additionalProperties": true,
+  
+  "properties": {
+    "cayp_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "CAYP specification version (e.g., '1.0')"
+    },
+    
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-z0-9-_]+$",
+      "description": "Human-readable identifier for this configuration"
+    },
+    
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Purpose and function of this agent"
+    },
+    
+    "created": {
+      "type": "string",
+      "format": "date",
+      "description": "Creation date in ISO 8601 format (YYYY-MM-DD)"
+    },
+    
+    "models": {
+      "type": "object",
+      "description": "AI model configurations",
+      "additionalProperties": {
+        "$ref": "#/definitions/model"
+      }
+    },
+    
+    "tools": {
+      "type": "array",
+      "description": "Agent tools and capabilities",
+      "items": {
+        "$ref": "#/definitions/tool"
+      }
+    },
+    
+    "workflows": {
+      "type": "object",
+      "description": "Multi-step agent workflows",
+      "additionalProperties": {
+        "$ref": "#/definitions/workflow"
+      }
+    },
+    
+    "safety": {
+      "$ref": "#/definitions/safety",
+      "description": "Safety and constraints configuration (REQUIRED)"
+    },
+    
+    "deployment": {
+      "$ref": "#/definitions/deployment",
+      "description": "Deployment configuration"
+    },
+    
+    "metadata": {
+      "$ref": "#/definitions/metadata",
+      "description": "Additional metadata about this configuration"
+    }
+  },
+  
+  "definitions": {
+    "model": {
+      "type": "object",
+      "required": ["provider", "model"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "google", "cohere", "mistral", "custom"],
+          "description": "Model provider"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model identifier"
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "max_tokens": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "top_p": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "top_k": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stop_sequences": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "fallback": {
+          "type": "string",
+          "description": "Name of fallback model"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "retry": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "use_cases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    
+    "tool": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Unique tool identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["function", "api", "system", "custom"],
+          "description": "Tool type"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Tool purpose and functionality"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/parameter"
+          },
+          "description": "Tool input parameters"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "System capabilities (for system-type tools)"
+        },
+        "authentication": {
+          "$ref": "#/definitions/authentication",
+          "description": "Authentication configuration"
+        },
+        "rate_limit": {
+          "$ref": "#/definitions/rate_limit",
+          "description": "Rate limiting configuration"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 600,
+          "description": "Timeout in seconds"
+        },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "max_execution_time": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_memory_mb": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "network_access": {
+              "type": "boolean"
+            },
+            "filesystem_access": {
+              "type": "string",
+              "enum": ["none", "readonly", "readwrite"]
+            }
+          }
+        }
+      }
+    },
+    
+    "parameter": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "integer", "number", "boolean", "array", "object"],
+          "description": "Parameter type"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "default": {
+          "description": "Default value (type depends on parameter type)"
+        },
+        "minimum": {
+          "type": "number",
+          "description": "Minimum value (for number/integer types)"
+        },
+        "maximum": {
+          "type": "number",
+          "description": "Maximum value (for number/integer types)"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum length (for string types)"
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum length (for string types)"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern (for string types)"
+        },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Allowed values"
+        }
+      }
+    },
+    
+    "workflow": {
+      "type": "object",
+      "required": ["description", "steps"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "input_schema": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/parameter"
+          }
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/workflow_step"
+          }
+        },
+        "output": {
+          "type": "string",
+          "description": "Output variable reference"
+        },
+        "error_handling": {
+          "$ref": "#/definitions/error_handling"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        }
+      }
+    },
+    
+    "workflow_step": {
+      "type": "object",
+      "required": ["name"],
+      "oneOf": [
+        {"required": ["tool"]},
+        {"required": ["model"]}
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "tool": {
+          "type": "string",
+          "description": "Tool name to execute"
+        },
+        "model": {
+          "type": "string",
+          "description": "Model name to use"
+        },
+        "input": {
+          "description": "Input data (can be object or variable reference)"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output variable name"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Conditional execution expression"
+        },
+        "parallel": {
+          "type": "boolean",
+          "default": false
+        },
+        "max_parallel": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "on_error": {
+          "type": "string",
+          "enum": ["fail", "continue", "retry"]
+        }
+      }
+    },
+    
+    "error_handling": {
+      "type": "object",
+      "properties": {
+        "on_failure": {
+          "type": "string",
+          "enum": ["fail", "retry", "partial_results", "fallback"]
+        },
+        "max_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "retry_delay": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300
+        },
+        "fallback_workflow": {
+          "type": "string",
+          "description": "Name of fallback workflow"
+        }
+      }
+    },
+    
+    "safety": {
+      "type": "object",
+      "anyOf": [
+        {"required": ["content_filtering"]},
+        {"required": ["output_validation"]}
+      ],
+      "properties": {
+        "content_filtering": {
+          "type": "object",
+          "required": ["enabled", "action"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "categories": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "hate_speech",
+                  "violence",
+                  "self_harm",
+                  "sexual_content",
+                  "dangerous_content",
+                  "harassment"
+                ]
+              }
+            },
+            "action": {
+              "type": "string",
+              "enum": ["block", "warn", "log"]
+            },
+            "custom_rules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["pattern", "action", "reason"],
+                "properties": {
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": ["block", "warn", "log"]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        
+        "output_validation": {
+          "type": "object",
+          "properties": {
+            "max_length": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "forbidden_patterns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["regex", "reason"],
+                "properties": {
+                  "regex": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required_disclaimer": {
+              "type": "boolean"
+            },
+            "disclaimer_text": {
+              "type": "string"
+            }
+          }
+        },
+        
+        "rate_limiting": {
+          "$ref": "#/definitions/rate_limit"
+        },
+        
+        "user_constraints": {
+          "type": "object",
+          "properties": {
+            "max_workflow_duration": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_concurrent_workflows": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "require_authentication": {
+              "type": "boolean"
+            },
+            "allowed_origins": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        },
+        
+        "audit": {
+          "type": "object",
+          "required": ["log_level"],
+          "properties": {
+            "log_level": {
+              "type": "string",
+              "enum": ["debug", "info", "warn", "error"]
+            },
+            "log_inputs": {
+              "type": "boolean"
+            },
+            "log_outputs": {
+              "type": "boolean"
+            },
+            "log_errors": {
+              "type": "boolean"
+            },
+            "retention_days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3650
+            },
+            "pii_handling": {
+              "type": "string",
+              "enum": ["none", "redact", "hash", "encrypt"]
+            },
+            "redact_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "export_format": {
+              "type": "string",
+              "enum": ["json", "json_lines", "csv"]
+            }
+          }
+        }
+      }
+    },
+    
+    "authentication": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["api_key", "oauth", "service_account", "basic", "custom"]
+        },
+        "key_env": {
+          "type": "string",
+          "description": "Environment variable name for API key"
+        },
+        "credentials_env": {
+          "type": "string",
+          "description": "Environment variable name for credentials"
+        },
+        "oauth_config": {
+          "type": "object",
+          "properties": {
+            "client_id_env": {
+              "type": "string"
+            },
+            "client_secret_env": {
+              "type": "string"
+            },
+            "token_url": {
+              "type": "string",
+              "format": "uri"
+            },
+            "scopes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "secret_manager": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["aws_secrets_manager", "gcp_secret_manager", "azure_key_vault", "hashicorp_vault"]
+            },
+            "secret_id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    
+    "rate_limit": {
+      "type": "object",
+      "properties": {
+        "requests_per_minute": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "requests_per_hour": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "requests_per_day": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "requests_per_user_per_hour": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "requests_per_user_per_day": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "requests_per_ip_per_hour": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "burst": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "burst_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rate_limit_message": {
+          "type": "string"
+        }
+      }
+    },
+    
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "string",
+          "enum": ["development", "staging", "production"]
+        },
+        "region": {
+          "type": "string"
+        },
+        "scaling": {
+          "type": "object",
+          "properties": {
+            "min_instances": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max_instances": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "target_cpu_percent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "target_memory_percent": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "health_check": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "interval": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "unhealthy_threshold": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "monitoring": {
+          "type": "object",
+          "properties": {
+            "metrics_enabled": {
+              "type": "boolean"
+            },
+            "tracing_enabled": {
+              "type": "boolean"
+            },
+            "log_aggregation": {
+              "type": "string"
+            },
+            "alert_on_errors": {
+              "type": "boolean"
+            },
+            "alert_email": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        }
+      }
+    },
+    
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "documentation": {
+          "type": "string",
+          "format": "uri"
+        },
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "type": "string"
+        },
+        "support_contact": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

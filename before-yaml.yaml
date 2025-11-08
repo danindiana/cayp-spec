@@ -1,0 +1,92 @@
+# BEFORE: Traditional YAML Configuration
+# This is a typical YAML config with various ambiguities and issues
+
+version: 1.20                    # Will parse as sexagesimal (80)!
+name: agent-config
+enabled: yes                     # Legacy boolean
+debug: on                        # Legacy boolean
+caching: off                     # Legacy boolean
+
+# Common settings using anchors
+defaults: &common
+  timeout: 30
+  retry: 3
+  region: us-east-1
+
+# The Norway Problem strikes!
+deployment:
+  country: no                    # Parses as boolean false!
+  region: us-west-2
+  environment: prod
+  
+# Model configuration
+models:
+  primary:
+    provider: anthropic
+    <<: *common                  # Merge keys (security risk)
+    model: claude-sonnet-4
+    temperature: 0.7
+    
+  secondary:
+    provider: openai
+    <<: *common                  # Duplicating via anchors
+    model: gpt-4
+
+# Hardcoded secrets (bad practice but common in YAML)
+auth:
+  api_key: sk-1234567890abcdef   # Secret in plain text!
+  token: abc123xyz               # Another secret!
+
+# Ambiguous types
+config:
+  user_id: 123456                # Integer or string?
+  zip_code: 02134                # Leading zero lost!
+  order_id: 0001234              # Leading zeros lost!
+  status: 1                      # Integer or boolean?
+  
+# Implicit nulls
+optional:
+  field1:                        # Empty = null?
+  field2:                        # Empty = null?
+  field3: ~                      # Explicitly null
+
+# Tools with poor structure
+tools:
+  - name: search
+    type: api
+    params:
+      query: string
+      max: 10
+      
+  - name: fetch
+    type: api
+    params:
+      url: string
+
+# Basic workflow
+workflows:
+  main:
+    - step: search
+      tool: search
+      input: ${query}
+      
+    - step: analyze
+      model: primary
+      input: ${search.output}
+      
+# Minimal safety (often missing entirely)
+safety:
+  filter: on                     # Legacy boolean!
+  log: yes                       # Legacy boolean!
+
+# Issues with this YAML:
+# 1. version: 1.20 → parses as 80 (sexagesimal)
+# 2. enabled: yes → ambiguous boolean
+# 3. country: no → The Norway Problem (parses as false)
+# 4. Anchors/aliases → security risks
+# 5. Hardcoded secrets → security violation
+# 6. Numeric strings lose leading zeros
+# 7. Implicit nulls → ambiguous intent
+# 8. Poor structure for agentic systems
+# 9. Minimal safety configuration
+# 10. No validation or schema
