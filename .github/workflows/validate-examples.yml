@@ -1,0 +1,212 @@
+name: Validate Examples
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'examples/**'
+      - 'schemas/**'
+      - '.github/workflows/validate-examples.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'examples/**'
+      - 'schemas/**'
+      - '.github/workflows/validate-examples.yml'
+
+jobs:
+  validate-yaml-syntax:
+    name: Validate YAML Syntax
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Validate YAML syntax in examples
+        run: |
+          python -c "
+          import yaml
+          import sys
+          from pathlib import Path
+
+          errors = []
+          for example in Path('examples').rglob('*.cayp'):
+              try:
+                  with open(example) as f:
+                      yaml.safe_load(f)
+                  print(f'✅ {example}')
+              except yaml.YAMLError as e:
+                  errors.append(f'❌ {example}: {e}')
+                  print(f'❌ {example}: {e}')
+
+          for yaml_file in Path('examples').rglob('*.yaml'):
+              try:
+                  with open(yaml_file) as f:
+                      yaml.safe_load(f)
+                  print(f'✅ {yaml_file}')
+              except yaml.YAMLError as e:
+                  errors.append(f'❌ {yaml_file}: {e}')
+                  print(f'❌ {yaml_file}: {e}')
+
+          if errors:
+              print(f'\n{len(errors)} file(s) failed YAML syntax validation')
+              sys.exit(1)
+          else:
+              print(f'\n✅ All YAML files are syntactically valid')
+          "
+
+  validate-json-schema:
+    name: Validate Against JSON Schema
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema
+
+      - name: Validate valid examples against schema
+        run: |
+          python -c "
+          import yaml
+          import json
+          import jsonschema
+          import sys
+          from pathlib import Path
+
+          # Load schema
+          with open('schemas/cayp-schema-v1.0.json') as f:
+              schema = json.load(f)
+
+          print('Validating examples in examples/valid/')
+          errors = []
+          for example in Path('examples/valid').glob('*.cayp'):
+              try:
+                  with open(example) as f:
+                      data = yaml.safe_load(f)
+                  jsonschema.validate(data, schema)
+                  print(f'✅ {example.name}')
+              except (jsonschema.ValidationError, yaml.YAMLError) as e:
+                  errors.append(f'❌ {example.name}: {str(e)[:100]}...')
+                  print(f'❌ {example.name}: {e}')
+
+          if errors:
+              print(f'\n{len(errors)} valid example(s) failed validation')
+              sys.exit(1)
+          else:
+              print(f'\n✅ All valid examples passed schema validation')
+          "
+
+      - name: Check invalid examples fail validation
+        run: |
+          python -c "
+          import yaml
+          import json
+          import jsonschema
+          import sys
+          from pathlib import Path
+
+          # Load schema
+          with open('schemas/cayp-schema-v1.0.json') as f:
+              schema = json.load(f)
+
+          print('Checking that invalid examples fail validation')
+          unexpected_passes = []
+          for example in Path('examples/invalid').glob('*.cayp'):
+              try:
+                  with open(example) as f:
+                      data = yaml.safe_load(f)
+                  jsonschema.validate(data, schema)
+                  unexpected_passes.append(example.name)
+                  print(f'⚠️  {example.name} unexpectedly passed validation')
+              except (jsonschema.ValidationError, yaml.YAMLError):
+                  print(f'✅ {example.name} correctly failed validation')
+
+          if unexpected_passes:
+              print(f'\n❌ {len(unexpected_passes)} invalid example(s) unexpectedly passed')
+              sys.exit(1)
+          else:
+              print(f'\n✅ All invalid examples correctly failed validation')
+          "
+
+  check-required-fields:
+    name: Check Required Fields
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Verify required fields in valid examples
+        run: |
+          python -c "
+          import yaml
+          import sys
+          from pathlib import Path
+
+          required_fields = ['cayp_version', 'name', 'description', 'created']
+
+          errors = []
+          for example in Path('examples/valid').glob('*.cayp'):
+              with open(example) as f:
+                  data = yaml.safe_load(f)
+
+              missing = [field for field in required_fields if field not in data]
+              if missing:
+                  errors.append(f'❌ {example.name}: Missing {missing}')
+                  print(f'❌ {example.name}: Missing {missing}')
+              else:
+                  print(f'✅ {example.name}: All required fields present')
+
+          if errors:
+              print(f'\n{len(errors)} file(s) missing required fields')
+              sys.exit(1)
+          else:
+              print(f'\n✅ All examples have required fields')
+          "
+
+  check-file-naming:
+    name: Check File Naming Conventions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify .cayp extension for CAYP files
+        run: |
+          # Check that all CAYP files have .cayp extension
+          non_cayp=$(find examples -name '*.yml' -o -name '*.yaml' | grep -v 'before-yaml.yaml' || true)
+          if [ -n "$non_cayp" ]; then
+            echo "❌ Found YAML files that should be .cayp:"
+            echo "$non_cayp"
+            exit 1
+          else
+            echo "✅ All CAYP files use .cayp extension"
+          fi
