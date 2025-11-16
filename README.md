@@ -24,10 +24,12 @@ Traditional YAML has fundamental issues for production configuration:
 
 ### CAYP's Solution
 
-✅ **Deterministic** - Same input = same output, always  
-✅ **Secure** - No code execution vectors or DoS attacks  
-✅ **Agentic-First** - Models, tools, workflows as primitives  
+✅ **Deterministic** - Same input = same output, always
+✅ **Secure** - No code execution vectors or DoS attacks
+✅ **Agentic-First** - Models, tools, workflows as primitives
 ✅ **Production-Ready** - Comprehensive validation and tooling
+
+> 📊 **Visual Learner?** Check out our [Architecture & Diagrams](docs/ARCHITECTURE.md) for visual representations of CAYP's structure, validation workflows, and integration patterns.
 
 ---
 
@@ -51,8 +53,13 @@ cayp-spec/
 │       └── after-cayp.cayp            # Migrated to CAYP
 ├── tools/
 │   └── (validators, migrators - to be implemented)
-└── docs/
-    └── (additional documentation - to be created)
+├── docs/
+│   ├── MERGE_SUMMARY.md           # Branch merge documentation
+│   ├── PHASE_1_REVIEW.md          # Phase 1 implementation review
+│   ├── SESSION_SUMMARY.md         # Development session notes
+│   └── WORK_SUMMARY_2025-11-08.md # Daily work log
+└── .vscode/
+    └── (workspace configuration)
 ```
 
 ---
@@ -440,9 +447,11 @@ CAYP protects against:
 
 ## 📚 Additional Resources
 
-- **Specification:** `specification/CAYP-SPEC-v1.0.md`
-- **Schema:** `schemas/cayp-schema-v1.0.json`
-- **Examples:** `examples/` directory
+- **Specification:** [CAYP-SPEC-v1.0.md](specification/CAYP-SPEC-v1.0.md)
+- **Schema:** [cayp-schema-v1.0.json](schemas/cayp-schema-v1.0.json)
+- **Architecture & Diagrams:** [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Visual guides and workflows
+- **Examples:** [examples/](examples/) directory
+- **Documentation:** [docs/](docs/) directory
 - **Issues:** GitHub Issues (to be set up)
 - **Discussions:** Community forum (to be set up)
 
