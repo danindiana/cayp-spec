@@ -1,7 +1,16 @@
 # CAYP: Configuration for Agentic Systems - YAML Profile
 
-**Version:** 1.0.0  
-**Status:** Draft Specification  
+[![Validate Examples](https://github.com/danindiana/cayp-spec/actions/workflows/validate-examples.yml/badge.svg)](https://github.com/danindiana/cayp-spec/actions/workflows/validate-examples.yml)
+[![Check Specification](https://github.com/danindiana/cayp-spec/actions/workflows/check-spec.yml/badge.svg)](https://github.com/danindiana/cayp-spec/actions/workflows/check-spec.yml)
+[![Check Links](https://github.com/danindiana/cayp-spec/actions/workflows/check-links.yml/badge.svg)](https://github.com/danindiana/cayp-spec/actions/workflows/check-links.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/danindiana/cayp-spec/blob/main/CHANGELOG.md)
+[![Status](https://img.shields.io/badge/status-draft-orange.svg)](https://github.com/danindiana/cayp-spec/blob/main/specification/CAYP-SPEC-v1.0.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/danindiana/cayp-spec/blob/main/CONTRIBUTING.md)
+
+**Version:** 1.0.0
+**Status:** Draft Specification
 **Last Updated:** November 2025
 
 ---
