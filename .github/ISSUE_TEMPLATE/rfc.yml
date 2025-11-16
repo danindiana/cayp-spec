@@ -1,0 +1,178 @@
+name: RFC (Request for Comments)
+description: Propose a significant change to the CAYP specification
+title: "[RFC]: "
+labels: ["rfc", "spec-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## RFC Process
+
+        RFCs are for significant changes to the CAYP specification. Use this template for:
+        - Breaking changes to syntax or semantics
+        - New major features
+        - Significant design decisions
+
+        For minor changes, use a regular feature request instead.
+
+  - type: input
+    id: rfc-number
+    attributes:
+      label: RFC Number
+      description: Leave blank - will be assigned by maintainers
+      placeholder: Will be assigned
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph explanation of the proposal
+      placeholder: Brief summary of the RFC...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: |
+        Why are we doing this? What use cases does it support? What problems does it solve?
+        What is the expected outcome?
+      placeholder: |
+        - Problem: ...
+        - Use cases: ...
+        - Expected outcome: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Detailed Design
+      description: Explain the design in enough detail for someone familiar with CAYP to implement it
+      placeholder: |
+        ## Proposed Changes
+
+        ### Specification Updates
+
+        ### Examples
+
+        ```yaml
+        cayp_version: "1.0"
+        # Example showing the proposed feature
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Backward Compatibility
+      description: How does this affect existing CAYP files? Is migration possible?
+      placeholder: |
+        - Impact on existing files: ...
+        - Migration strategy: ...
+        - Deprecation plan: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security Implications
+      description: Does this introduce any security concerns?
+      placeholder: |
+        - Security risks: ...
+        - Mitigations: ...
+        - Threat model impact: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: drawbacks
+    attributes:
+      label: Drawbacks
+      description: Why should we NOT do this? What are the downsides?
+      placeholder: |
+        - Complexity added: ...
+        - Learning curve: ...
+        - Maintenance burden: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What other designs have been considered? What is the impact of not doing this?
+      placeholder: |
+        ## Alternative 1
+        - Description: ...
+        - Pros: ...
+        - Cons: ...
+
+        ## Alternative 2
+        - Description: ...
+        - Pros: ...
+        - Cons: ...
+
+        ## Doing Nothing
+        - Impact: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open Questions
+      description: What parts of the design need to be resolved during the RFC process?
+      placeholder: |
+        - Question 1: ...
+        - Question 2: ...
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Plan
+      description: How will this be implemented? Timeline? Who will do it?
+      placeholder: |
+        ## Phases
+        1. Phase 1: ...
+        2. Phase 2: ...
+
+        ## Timeline
+        - ...
+
+        ## Implementers
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to related issues, prior art, research, etc.
+      placeholder: |
+        - Related issue: #123
+        - Prior art: ...
+        - Research: ...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: RFC Checklist
+      description: Please confirm
+      options:
+        - label: I have searched for similar proposals
+          required: true
+        - label: This requires an RFC (not suitable for a simple feature request)
+          required: true
+        - label: I have considered security implications
+          required: true
+        - label: I have considered backward compatibility
+          required: true
+        - label: I am willing to participate in the discussion and refinement
+          required: true
+        - label: I am willing to help with implementation
+          required: false

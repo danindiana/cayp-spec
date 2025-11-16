@@ -1,0 +1,140 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for CAYP
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please provide as much detail as possible.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this feature affect?
+      options:
+        - Specification
+        - JSON Schema
+        - Examples
+        - Documentation
+        - Tools (validator/migrator)
+        - IDE Integration
+        - CI/CD Integration
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: change-type
+    attributes:
+      label: Change Type
+      description: What type of change is this?
+      options:
+        - Patch (clarification, typo fix)
+        - Minor (new optional feature, backward compatible)
+        - Major (breaking change)
+        - Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: Describe the problem or use case...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like to solve this problem?
+      placeholder: Describe your proposed solution...
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Usage
+      description: Show how the feature would be used
+      render: yaml
+      placeholder: |
+        cayp_version: "1.0"
+        name: "example"
+        # Example showing the new feature
+        new_feature:
+          example: "value"
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other approaches have you considered?
+      placeholder: Describe alternative solutions...
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Change?
+      description: Would this be a breaking change to existing CAYP files?
+      options:
+        - "No"
+        - "Yes"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: security
+    attributes:
+      label: Security Implications?
+      description: Does this feature have security implications?
+      options:
+        - "No"
+        - "Yes"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: security-details
+    attributes:
+      label: Security Details
+      description: If yes, please describe the security implications
+      placeholder: Describe security implications...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - "Low - Nice to have"
+        - "Medium - Would improve CAYP"
+        - "High - Critical for adoption"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, references, or information
+      placeholder: Add any other context here...
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for similar feature requests
+          required: true
+        - label: I have read the specification
+          required: true
+        - label: I am willing to help implement this feature
+          required: false

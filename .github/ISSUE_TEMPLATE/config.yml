@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/cayp-spec/cayp/discussions
+    about: Ask questions and discuss CAYP with the community
+  - name: 📖 Documentation
+    url: https://github.com/cayp-spec/cayp/blob/main/README.md
+    about: Read the CAYP documentation and specification
+  - name: 💡 Examples
+    url: https://github.com/cayp-spec/cayp/tree/main/examples
+    about: See example CAYP configurations
+  - name: 🏗️ Architecture Diagrams
+    url: https://github.com/cayp-spec/cayp/blob/main/docs/ARCHITECTURE.md
+    about: View visual guides and architecture diagrams

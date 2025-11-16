@@ -1,0 +1,183 @@
+name: Check Links
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.md'
+      - '.github/workflows/check-links.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.md'
+      - '.github/workflows/check-links.yml'
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  check-internal-links:
+    name: Check Internal Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check internal markdown links
+        run: |
+          python -c "
+          import re
+          import sys
+          from pathlib import Path
+
+          def check_file_exists(link, current_file):
+              # Handle relative links
+              if link.startswith('/'):
+                  target = Path('.' + link)
+              else:
+                  target = (current_file.parent / link).resolve()
+
+              # Remove anchor if present
+              target_str = str(target).split('#')[0]
+              target_path = Path(target_str)
+
+              return target_path.exists()
+
+          errors = []
+          for md_file in Path('.').rglob('*.md'):
+              if '.git' in str(md_file):
+                  continue
+
+              with open(md_file, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              # Find markdown links [text](link)
+              links = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', content)
+
+              for text, link in links:
+                  # Skip external links
+                  if link.startswith('http'):
+                      continue
+
+                  # Skip anchors only
+                  if link.startswith('#'):
+                      continue
+
+                  # Remove anchor if present
+                  link_path = link.split('#')[0]
+                  if not link_path:
+                      continue
+
+                  if not check_file_exists(link_path, md_file):
+                      errors.append(f'{md_file}: Broken link [{text}]({link})')
+                      print(f'❌ {md_file}: Broken link [{text}]({link})')
+
+          if errors:
+              print(f'\n{len(errors)} broken link(s) found')
+              sys.exit(1)
+          else:
+              print('\n✅ All internal links are valid')
+          "
+
+  check-markdown-formatting:
+    name: Check Markdown Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install markdownlint
+        run: |
+          npm install -g markdownlint-cli
+
+      - name: Create markdownlint config
+        run: |
+          cat > .markdownlint.json << 'EOF'
+          {
+            "default": true,
+            "MD013": false,
+            "MD033": false,
+            "MD041": false,
+            "MD046": false
+          }
+          EOF
+
+      - name: Run markdownlint
+        run: |
+          markdownlint '**/*.md' --ignore node_modules --ignore .git || echo "⚠️  Markdown formatting issues found (non-blocking)"
+
+  check-documentation-structure:
+    name: Check Documentation Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify required documentation files exist
+        run: |
+          required_files=(
+            "README.md"
+            "LICENSE"
+            "CONTRIBUTING.md"
+            "CHANGELOG.md"
+            "specification/README.md"
+            "specification/CAYP-SPEC-v1.0.md"
+            "examples/README.md"
+            "tools/README.md"
+            "docs/ARCHITECTURE.md"
+          )
+
+          missing=()
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing+=("$file")
+              echo "❌ Missing: $file"
+            else
+              echo "✅ Found: $file"
+            fi
+          done
+
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo ""
+            echo "❌ ${#missing[@]} required file(s) missing"
+            exit 1
+          else
+            echo ""
+            echo "✅ All required documentation files present"
+          fi
+
+      - name: Verify directory structure
+        run: |
+          required_dirs=(
+            "specification"
+            "schemas"
+            "examples/valid"
+            "examples/invalid"
+            "examples/migration"
+            "docs"
+            "tools"
+            ".github/ISSUE_TEMPLATE"
+            ".github/workflows"
+          )
+
+          missing=()
+          for dir in "${required_dirs[@]}"; do
+            if [ ! -d "$dir" ]; then
+              missing+=("$dir")
+              echo "❌ Missing directory: $dir"
+            else
+              echo "✅ Found directory: $dir"
+            fi
+          done
+
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo ""
+            echo "❌ ${#missing[@]} required directory(ies) missing"
+            exit 1
+          else
+            echo ""
+            echo "✅ All required directories present"
+          fi
